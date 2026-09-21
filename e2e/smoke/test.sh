@@ -15,11 +15,35 @@ if [[ "${USE_BAZEL_VERSION:-}" == 8.* ]]; then
   BAZEL_COMMON=(--lockfile_mode=off)
 fi
 
-cleanup() {
+stop_watcher() {
   if [[ -n "${WATCH_PID}" ]]; then
-    kill "${WATCH_PID}" 2>/dev/null || true
+    case "$(uname -s)" in
+      MINGW* | MSYS* | CYGWIN*)
+        local windows_pid
+        if ! windows_pid="$(tr -d '[:space:]' 2>/dev/null <"/proc/${WATCH_PID}/winpid")"; then
+          echo "Unable to read native Windows watcher PID for ${WATCH_PID}" >&2
+          return 1
+        fi
+        if [[ ! "${windows_pid}" =~ ^[0-9]+$ ]]; then
+          echo "Unable to resolve native Windows watcher PID for ${WATCH_PID}" >&2
+          return 1
+        fi
+        if ! taskkill.exe //PID "${windows_pid}" //T //F >/dev/null 2>&1; then
+          echo "Unable to terminate Windows watcher process tree ${windows_pid}" >&2
+          return 1
+        fi
+        ;;
+      *)
+        kill "${WATCH_PID}" 2>/dev/null || true
+        ;;
+    esac
     wait "${WATCH_PID}" 2>/dev/null || true
+    WATCH_PID=""
   fi
+}
+
+cleanup() {
+  stop_watcher || true
   rm -rf "${TEMP_ROOT}"
 }
 trap cleanup EXIT
@@ -36,6 +60,9 @@ wait_for_content() {
   while ! grep -Fq "${expected}" "${file}" 2>/dev/null; do
     attempts=$((attempts + 1))
     if [[ ${attempts} -ge 300 ]]; then
+      if [[ -f "${file}" ]]; then
+        cat "${file}" >&2
+      fi
       fail "timed out waiting for '${expected}' in ${file}"
     fi
     sleep 0.1
@@ -71,7 +98,13 @@ grep -Fq 'class Excluded{}' excluded/Excluded.java || fail "writer formatted an 
 
 mkdir watch
 printf 'class Existing{}\n' >watch/Existing.java
-"${BAZEL[@]}" run "${BAZEL_COMMON[@]}" @rules_palantir_java_format//:java_format_watch -- --root=watch >watch.log 2>&1 &
+"${BAZEL[@]}" build "${BAZEL_COMMON[@]}" @rules_palantir_java_format//:java_format_watch
+EXECUTION_ROOT="$("${BAZEL[@]}" info "${BAZEL_COMMON[@]}" execution_root)"
+WATCHER_OUTPUT="$("${BAZEL[@]}" cquery "${BAZEL_COMMON[@]}" --output=files \
+  @rules_palantir_java_format//:java_format_watch | grep -Ev '\.jar$')"
+WATCHER="${EXECUTION_ROOT}/${WATCHER_OUTPUT}"
+[[ -x "${WATCHER}" ]] || fail "watcher executable was not found at ${WATCHER}"
+BUILD_WORKSPACE_DIRECTORY="${SMOKE}" "${WATCHER}" --root=watch >watch.log 2>&1 &
 WATCH_PID=$!
 wait_for_content watch.log "Watching Java sources under watch"
 grep -Fq 'class Existing{}' watch/Existing.java || fail "watcher formatted at startup"
@@ -84,9 +117,7 @@ wait_for_content watch/Existing.java "class Existing {}"
 mkdir -p watch/nested
 printf 'class Nested{}\n' >watch/nested/Nested.java
 wait_for_content watch/nested/Nested.java "class Nested {}"
-kill "${WATCH_PID}" 2>/dev/null || true
-wait "${WATCH_PID}" 2>/dev/null || true
-WATCH_PID=""
+stop_watcher
 
 printf 'class Outside{}\n' >Outside.java
 if ln -s "${SMOKE}/Outside.java" watch/Linked.java 2>/dev/null; then
