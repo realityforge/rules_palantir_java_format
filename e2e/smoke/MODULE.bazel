@@ -1,0 +1,22 @@
+module(
+    name = "rules_palantir_java_format_smoke",
+)
+
+bazel_dep(name = "rules_java", version = "9.9.0")
+bazel_dep(name = "rules_jvm_external", version = "7.1")
+bazel_dep(name = "rules_palantir_java_format")
+local_path_override(
+    module_name = "rules_palantir_java_format",
+    path = "../..",
+)
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "rules_palantir_java_format_smoke_maven",
+    artifacts = ["com.google.guava:guava:33.5.0-jre"],
+    fail_if_repin_required = True,
+    lock_file = "//:maven_install.json",
+    repositories = ["https://repo.maven.apache.org/maven2"],
+    strict_visibility = True,
+)
+use_repo(maven, "rules_palantir_java_format_smoke_maven")

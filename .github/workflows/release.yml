@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing reviewed vMAJOR.MINOR.PATCH tag to release"
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  release:
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.7.0
+    with:
+      bazel_test_command: tools/check.sh
+      draft: false
+      prerelease: false
+      release_files: rules_palantir_java_format-${{ inputs.tag }}.tar.gz
+      tag_name: ${{ inputs.tag }}

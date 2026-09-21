@@ -1,7 +1,5 @@
 package org.realityforge.rules.palantirjavaformat;
 
-import com.google.devtools.build.lib.worker.WorkerProtocol.WorkRequest;
-import com.google.devtools.build.lib.worker.WorkerProtocol.WorkResponse;
 import com.palantir.javaformat.java.FormatterException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,25 +33,19 @@ public final class PalantirJavaFormatWorkerMain {
     static void runPersistent(final PalantirFormatter formatter, final InputStream input, final OutputStream output)
             throws IOException {
         while (true) {
-            final @Nullable WorkRequest request = WorkRequest.parseDelimitedFrom(input);
+            final var request = WorkerProtocol.readRequest(input);
             if (null == request) {
                 return;
             }
-            final WorkResponse response;
-            if (request.getCancel()) {
-                response = WorkResponse.newBuilder()
-                        .setRequestId(request.getRequestId())
-                        .setWasCancelled(true)
-                        .build();
+            final WorkerProtocol.WorkResponse response;
+            if (request.cancel()) {
+                response = new WorkerProtocol.WorkResponse(0, "", request.requestId(), true);
             } else {
-                final CheckResult result = process(formatter, request.getArgumentsList());
-                response = WorkResponse.newBuilder()
-                        .setRequestId(request.getRequestId())
-                        .setExitCode(result.exitCode())
-                        .setOutput(result.output())
-                        .build();
+                final CheckResult result = process(formatter, request.arguments());
+                response =
+                        new WorkerProtocol.WorkResponse(result.exitCode(), result.output(), request.requestId(), false);
             }
-            response.writeDelimitedTo(output);
+            WorkerProtocol.writeResponse(response, output);
             output.flush();
         }
     }

@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/realityforge/rules_palantir_java_format",
+  "maintainers": [
+    {
+      "name": "Peter Donald",
+      "email": "peter@realityforge.org",
+      "github": "realityforge",
+      "github_user_id": 11840
+    }
+  ],
+  "repository": [
+    "github:realityforge/rules_palantir_java_format"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}

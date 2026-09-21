@@ -2,8 +2,6 @@ package org.realityforge.rules.palantirjavaformat;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.devtools.build.lib.worker.WorkerProtocol.WorkRequest;
-import com.google.devtools.build.lib.worker.WorkerProtocol.WorkResponse;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -24,38 +23,42 @@ final class PalantirJavaFormatWorkerMainTest {
         final Path dirtyMarker = write(tempDir.resolve("dirty.marker"), "stale");
         final Path reportMarker = tempDir.resolve("report.marker");
         final var requests = new ByteArrayOutputStream();
-        scanRequest(11, cleanMarker, clean).writeDelimitedTo(requests);
-        scanRequest(12, dirtyMarker, dirty).writeDelimitedTo(requests);
-        reportRequest(13, reportMarker, cleanMarker, dirtyMarker).writeDelimitedTo(requests);
-        WorkRequest.newBuilder().setRequestId(14).setCancel(true).build().writeDelimitedTo(requests);
+        WorkerProtocol.writeRequest(scanRequest(11, cleanMarker, clean), requests);
+        WorkerProtocol.writeRequest(scanRequest(12, dirtyMarker, dirty), requests);
+        WorkerProtocol.writeRequest(reportRequest(13, reportMarker, cleanMarker, dirtyMarker), requests);
+        WorkerProtocol.writeRequest(new WorkerProtocol.WorkRequest(List.of(), 14, true), requests);
         final var responses = new ByteArrayOutputStream();
 
         PalantirJavaFormatWorkerMain.runPersistent(
                 new PalantirFormatter(), new ByteArrayInputStream(requests.toByteArray()), responses);
 
         final var responseInput = new ByteArrayInputStream(responses.toByteArray());
-        final WorkResponse cleanResponse = WorkResponse.parseDelimitedFrom(responseInput);
-        final WorkResponse dirtyResponse = WorkResponse.parseDelimitedFrom(responseInput);
-        final WorkResponse reportResponse = WorkResponse.parseDelimitedFrom(responseInput);
-        final WorkResponse cancelResponse = WorkResponse.parseDelimitedFrom(responseInput);
-        assertThat(cleanResponse.getRequestId()).isEqualTo(11);
-        assertThat(cleanResponse.getExitCode()).isZero();
-        assertThat(cleanResponse.getOutput()).isEmpty();
+        final WorkerProtocol.WorkResponse cleanResponse =
+                Objects.requireNonNull(WorkerProtocol.readResponse(responseInput));
+        final WorkerProtocol.WorkResponse dirtyResponse =
+                Objects.requireNonNull(WorkerProtocol.readResponse(responseInput));
+        final WorkerProtocol.WorkResponse reportResponse =
+                Objects.requireNonNull(WorkerProtocol.readResponse(responseInput));
+        final WorkerProtocol.WorkResponse cancelResponse =
+                Objects.requireNonNull(WorkerProtocol.readResponse(responseInput));
+        assertThat(cleanResponse.requestId()).isEqualTo(11);
+        assertThat(cleanResponse.exitCode()).isZero();
+        assertThat(cleanResponse.output()).isEmpty();
         assertThat(cleanMarker).exists();
-        assertThat(dirtyResponse.getRequestId()).isEqualTo(12);
-        assertThat(dirtyResponse.getExitCode()).isZero();
-        assertThat(dirtyResponse.getOutput()).isEmpty();
+        assertThat(dirtyResponse.requestId()).isEqualTo(12);
+        assertThat(dirtyResponse.exitCode()).isZero();
+        assertThat(dirtyResponse.output()).isEmpty();
         assertThat(dirtyMarker).content(StandardCharsets.UTF_8).isEqualTo(dirty + "\n");
         assertThat(dirty).content(StandardCharsets.UTF_8).isEqualTo("class Dirty{}\n");
-        assertThat(reportResponse.getRequestId()).isEqualTo(13);
-        assertThat(reportResponse.getExitCode()).isEqualTo(1);
-        assertThat(reportResponse.getOutput())
+        assertThat(reportResponse.requestId()).isEqualTo(13);
+        assertThat(reportResponse.exitCode()).isEqualTo(1);
+        assertThat(reportResponse.output())
                 .contains(dirty.toString(), "Run ./tools/format.sh write")
                 .doesNotContain(clean.toString());
         assertThat(reportMarker).doesNotExist();
-        assertThat(cancelResponse.getRequestId()).isEqualTo(14);
-        assertThat(cancelResponse.getWasCancelled()).isTrue();
-        assertThat(responseInput.read()).isEqualTo(-1);
+        assertThat(cancelResponse.requestId()).isEqualTo(14);
+        assertThat(cancelResponse.wasCancelled()).isTrue();
+        assertThat(WorkerProtocol.readResponse(responseInput)).isNull();
     }
 
     @Test
@@ -112,25 +115,22 @@ final class PalantirJavaFormatWorkerMainTest {
         assertThat(marker).doesNotExist();
     }
 
-    private static WorkRequest scanRequest(final int requestId, final Path marker, final Path source) {
-        return WorkRequest.newBuilder()
-                .setRequestId(requestId)
-                .addArguments("--mode=scan")
-                .addArguments("--marker=" + marker)
-                .addArguments(source.toString())
-                .build();
+    private static WorkerProtocol.WorkRequest scanRequest(final int requestId, final Path marker, final Path source) {
+        return new WorkerProtocol.WorkRequest(
+                List.of("--mode=scan", "--marker=" + marker, source.toString()), requestId, false);
     }
 
-    private static WorkRequest reportRequest(
+    private static WorkerProtocol.WorkRequest reportRequest(
             final int requestId, final Path marker, final Path cleanMarker, final Path dirtyMarker) {
-        return WorkRequest.newBuilder()
-                .setRequestId(requestId)
-                .addArguments("--mode=report")
-                .addArguments("--marker=" + marker)
-                .addArguments("--remediation=./tools/format.sh write")
-                .addArguments(cleanMarker.toString())
-                .addArguments(dirtyMarker.toString())
-                .build();
+        return new WorkerProtocol.WorkRequest(
+                List.of(
+                        "--mode=report",
+                        "--marker=" + marker,
+                        "--remediation=./tools/format.sh write",
+                        cleanMarker.toString(),
+                        dirtyMarker.toString()),
+                requestId,
+                false);
     }
 
     private static Path write(final Path path, final String content) throws IOException {

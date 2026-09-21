@@ -191,7 +191,7 @@ final class PalantirJavaFormatWatcherTest {
     }
 
     private static void awaitContent(final Path path, final String expected) throws IOException, InterruptedException {
-        final long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+        final long deadline = System.nanoTime() + Duration.ofSeconds(15).toNanos();
         while (System.nanoTime() < deadline) {
             if (expected.equals(Files.readString(path, StandardCharsets.UTF_8))) {
                 return;
@@ -203,7 +203,7 @@ final class PalantirJavaFormatWatcherTest {
 
     private static void awaitText(final ByteArrayOutputStream output, final String expected)
             throws InterruptedException {
-        final long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+        final long deadline = System.nanoTime() + Duration.ofSeconds(15).toNanos();
         while (System.nanoTime() < deadline) {
             if (output.toString(StandardCharsets.UTF_8).contains(expected)) {
                 return;

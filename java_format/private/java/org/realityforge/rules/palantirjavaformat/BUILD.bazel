@@ -1,4 +1,3 @@
-load("@protobuf//bazel:java_proto_library.bzl", "java_proto_library")
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 load("//java_format/private:defs.bzl", "PALANTIR_JVM_FLAGS")
 
@@ -50,19 +49,15 @@ java_binary(
     runtime_deps = [":watcher"],
 )
 
-java_proto_library(
-    name = "worker_protocol_java",
-    visibility = ["//java_format/private/javatests/org/realityforge/rules/palantirjavaformat:__pkg__"],
-    deps = ["@bazel_tools//src/main/protobuf:worker_protocol_proto"],
-)
-
 java_library(
     name = "worker",
-    srcs = ["PalantirJavaFormatWorkerMain.java"],
+    srcs = [
+        "PalantirJavaFormatWorkerMain.java",
+        "WorkerProtocol.java",
+    ],
     visibility = ["//java_format/private/javatests/org/realityforge/rules/palantirjavaformat:__pkg__"],
     deps = [
         ":javaformat",
-        ":worker_protocol_java",
         "@rules_palantir_java_format_maven//:com_palantir_javaformat_palantir_java_format_spi",
         "@rules_palantir_java_format_maven//:org_jspecify_jspecify",
     ],

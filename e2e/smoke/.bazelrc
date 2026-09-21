@@ -7,4 +7,4 @@ build --nojava_header_compilation
 build --strategy=PalantirJavaFormat=worker,local
 build --worker_max_instances=PalantirJavaFormat=1
 
-common --symlink_prefix=../.bazel/rules_palantir_java_format/
+common --symlink_prefix=/

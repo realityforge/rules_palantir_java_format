@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_palantir_java_format//:defs.bzl", "java_format_check")
+
+java_library(
+    name = "smoke",
+    srcs = ["src/example/Smoke.java"],
+    deps = ["@rules_palantir_java_format_smoke_maven//:com_google_guava_guava"],
+)
+
+java_format_check(
+    name = "format_check",
+    remediation = "bazel run @rules_palantir_java_format//:java_format -- --root=src",
+    targets = [":smoke"],
+)

@@ -1,0 +1,14 @@
+bcr_test_module:
+  module_path: "e2e/smoke"
+  matrix:
+    platform: ["debian11", "macos", "macos_arm64", "ubuntu2204", "windows"]
+    bazel: [8.x, 9.x]
+  tasks:
+    build:
+      name: "Build smoke consumer and public entry points"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      build_targets:
+        - "//:format_check"
+        - "@rules_palantir_java_format//:java_format"
+        - "@rules_palantir_java_format//:java_format_watch"

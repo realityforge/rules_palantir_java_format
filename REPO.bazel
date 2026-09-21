@@ -1,0 +1,7 @@
+"""Repository source package boundaries."""
+
+ignore_directories([
+    ".smoke-test.*",
+    ".git",
+    "e2e",
+])
