@@ -12,7 +12,7 @@ if [[ "${USE_BAZEL_VERSION:-}" == 8.* ]]; then
 fi
 
 cd "${ROOT}"
-"${BAZEL[@]}" run "${BAZEL_COMMON[@]}" //tools/buildifier:buildifier_check
+"${BAZEL[@]}" run "${BAZEL_COMMON[@]}" @buildifier_prebuilt//:buildifier -- -mode=check -lint=warn -r .
 "${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //...
 "${BAZEL[@]}" test "${BAZEL_COMMON[@]}" //...
 "${BAZEL[@]}" run "${BAZEL_COMMON[@]}" //:java_format -- --root=java_format --root=e2e

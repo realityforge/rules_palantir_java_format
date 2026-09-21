@@ -14,14 +14,16 @@ trap cleanup EXIT
 "${ROOT}/tools/release_archive.sh" v0.1.0 "${TEMP_ROOT}/second" "${TREEISH}" >/dev/null
 FIRST="${TEMP_ROOT}/first/rules_palantir_java_format-v0.1.0.tar.gz"
 SECOND="${TEMP_ROOT}/second/rules_palantir_java_format-v0.1.0.tar.gz"
+MANIFEST="${TEMP_ROOT}/archive.manifest"
 cmp "${FIRST}" "${SECOND}"
 
-if tar -tzf "${FIRST}" | grep -Ev '^rules_palantir_java_format-0\.1\.0/' >/dev/null; then
+tar -tzf "${FIRST}" >"${MANIFEST}"
+if grep -Ev '^rules_palantir_java_format-0\.1\.0/' "${MANIFEST}" >/dev/null; then
   echo "release archive contains an entry outside the versioned prefix" >&2
   exit 1
 fi
-tar -tzf "${FIRST}" | grep -Fqx 'rules_palantir_java_format-0.1.0/MODULE.bazel'
-tar -tzf "${FIRST}" | grep -Fqx 'rules_palantir_java_format-0.1.0/e2e/smoke/MODULE.bazel'
+grep -Fqx 'rules_palantir_java_format-0.1.0/MODULE.bazel' "${MANIFEST}"
+grep -Fqx 'rules_palantir_java_format-0.1.0/e2e/smoke/MODULE.bazel' "${MANIFEST}"
 tar -xzf "${FIRST}" -C "${TEMP_ROOT}"
 
 BAZEL=(bazel)
