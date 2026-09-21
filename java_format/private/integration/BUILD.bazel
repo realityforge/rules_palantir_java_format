@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:defs.bzl", "java_format_check")
+
+package(default_visibility = ["//visibility:private"])
+
+java_library(
+    name = "dependency",
+    srcs = ["Dependency.java"],
+)
+
+java_library(
+    name = "subject",
+    srcs = ["Subject.java"],
+    deps = [":dependency"],
+)
+
+java_format_check(
+    name = "format_check",
+    remediation = "bazel run //:java_format -- --root=java_format",
+    targets = [":subject"],
+)
