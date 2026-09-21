@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_test")
+load("//java_format/private:defs.bzl", "PALANTIR_JVM_FLAGS")
+
+package(default_visibility = ["//visibility:private"])
+
+java_test(
+    name = "javaformat_tests",
+    srcs = [
+        "PalantirFormatterTest.java",
+        "PalantirJavaFormatMainTest.java",
+        "package-info.java",
+    ],
+    args = [
+        "--select-package=org.realityforge.rules.palantirjavaformat",
+        "--fail-if-no-tests",
+    ],
+    jvm_flags = PALANTIR_JVM_FLAGS,
+    main_class = "org.junit.platform.console.ConsoleLauncher",
+    use_testrunner = False,
+    deps = [
+        "//java_format/private/java/org/realityforge/rules/palantirjavaformat:javaformat",
+        "@rules_palantir_java_format_maven//:com_palantir_javaformat_palantir_java_format",
+        "@rules_palantir_java_format_maven//:com_palantir_javaformat_palantir_java_format_spi",
+        "@rules_palantir_java_format_maven//:org_assertj_assertj_core",
+        "@rules_palantir_java_format_maven//:org_jspecify_jspecify",
+        "@rules_palantir_java_format_maven//:org_junit_platform_junit_platform_console_standalone",
+    ],
+)

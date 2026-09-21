@@ -1,0 +1,10 @@
+common --lockfile_mode=error
+
+common --java_language_version=17
+common --java_runtime_version=remotejdk_17
+common --tool_java_language_version=17
+common --tool_java_runtime_version=remotejdk_17
+
+build --nojava_header_compilation
+
+common --symlink_prefix=../.bazel/rules_palantir_java_format/

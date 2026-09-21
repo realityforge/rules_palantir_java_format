@@ -1,0 +1,26 @@
+module(
+    name = "rules_palantir_java_format",
+)
+
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1", dev_dependency = True)
+
+bazel_dep(name = "protobuf", version = "33.4")
+bazel_dep(name = "rules_java", version = "9.9.0")
+bazel_dep(name = "rules_jvm_external", version = "7.1")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "rules_palantir_java_format_maven",
+    artifacts = [
+        "com.palantir.javaformat:palantir-java-format:2.93.0",
+        "com.palantir.javaformat:palantir-java-format-spi:2.93.0",
+        "org.assertj:assertj-core:3.27.3",
+        "org.jspecify:jspecify:1.0.0",
+        "org.junit.platform:junit-platform-console-standalone:1.13.4",
+    ],
+    fail_if_repin_required = True,
+    lock_file = "//:maven_install.json",
+    repositories = ["https://repo.maven.apache.org/maven2"],
+    strict_visibility = True,
+)
+use_repo(maven, "rules_palantir_java_format_maven")
