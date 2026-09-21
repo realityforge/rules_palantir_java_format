@@ -10,6 +10,7 @@ java_test(
         "PalantirJavaFormatMainTest.java",
         "PalantirJavaFormatWatcherTest.java",
         "PalantirJavaFormatWorkerMainTest.java",
+        "WorkerProtocolTest.java",
         "package-info.java",
     ],
     args = [

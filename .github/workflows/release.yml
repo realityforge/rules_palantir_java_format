@@ -7,11 +7,90 @@ on:
         description: "Existing reviewed vMAJOR.MINOR.PATCH tag to release"
         required: true
         type: string
+      reviewed_sha:
+        description: "Exact 40-character commit SHA approved by implementation review"
+        required: true
+        type: string
 
 permissions: {}
 
 jobs:
+  preflight:
+    name: Verify reviewed release candidate
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Verify tag, reviewed commit, and required CI lanes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "${RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag must match vMAJOR.MINOR.PATCH: ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+          if [[ ! "${REVIEWED_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "reviewed_sha must be an exact 40-character lowercase commit SHA" >&2
+            exit 1
+          fi
+
+          git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+          tag_sha="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+          main_sha="$(git rev-parse origin/main)"
+          if [[ "${tag_sha}" != "${REVIEWED_SHA}" || "${tag_sha}" != "${main_sha}" ]]; then
+            echo "Release tag, reviewed SHA, and origin/main must identify the same commit" >&2
+            echo "tag=${tag_sha} reviewed=${REVIEWED_SHA} main=${main_sha}" >&2
+            exit 1
+          fi
+
+          run_id="$(gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs" \
+            -f head_sha="${tag_sha}" \
+            -f event=push \
+            -f status=success \
+            -f per_page=100 \
+            --jq '.workflow_runs[0].id // empty')"
+          if [[ -z "${run_id}" ]]; then
+            echo "No successful CI workflow run exists for ${tag_sha}" >&2
+            exit 1
+          fi
+
+          jobs="$(gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs" \
+            -f per_page=100)"
+          required_jobs=(
+            "Java 17 / Bazel 8.4.2 / Ubuntu x86_64"
+            "Java 17 / Bazel 9.2.0 / Ubuntu x86_64"
+            "Java 17 / Bazel 8.4.2 / macOS x86_64"
+            "Java 17 / Bazel 9.2.0 / macOS x86_64"
+            "Java 17 / Bazel 8.4.2 / macOS arm64"
+            "Java 17 / Bazel 9.2.0 / macOS arm64"
+            "Java 17 / Bazel 8.4.2 / Windows x86_64"
+            "Java 17 / Bazel 9.2.0 / Windows x86_64"
+            "Java 21 / Bazel 9.2.0 / Ubuntu x86_64"
+            "Java 25 / Bazel 9.2.0 / Ubuntu x86_64"
+          )
+          for job in "${required_jobs[@]}"; do
+            if ! jq -e --arg job "${job}" \
+              '[.jobs[] | select(.name == $job and .conclusion == "success")] | length == 1' \
+              <<<"${jobs}" >/dev/null; then
+              echo "Required CI job did not succeed exactly once: ${job}" >&2
+              exit 1
+            fi
+          done
+
   release:
+    needs: preflight
     permissions:
       attestations: write
       contents: write
