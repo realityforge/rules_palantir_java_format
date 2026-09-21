@@ -90,7 +90,7 @@ final class PalantirJavaFormatWatcher implements AutoCloseable {
             }
             final boolean changed = formatter.formatFile(admitted);
             if (changed) {
-                output.println("Formatted " + workspace.relativize(admitted));
+                output.println("Formatted " + display(admitted));
             }
             return changed;
         } catch (IOException | FormatterException e) {
@@ -215,14 +215,13 @@ final class PalantirJavaFormatWatcher implements AutoCloseable {
         final Path absolute = path.isAbsolute() ? path : workspace.resolve(path);
         final Path normalized = absolute.normalize();
         return normalized.startsWith(workspace)
-                ? workspace.relativize(normalized).toString()
+                ? workspace.relativize(normalized).toString().replace('\\', '/')
                 : normalized.toString();
     }
 
     private String displayRoots() {
         return sourceRoots.stream()
-                .map(workspace::relativize)
-                .map(Path::toString)
+                .map(this::display)
                 .sorted()
                 .reduce((left, right) -> left + ", " + right)
                 .orElseThrow();
