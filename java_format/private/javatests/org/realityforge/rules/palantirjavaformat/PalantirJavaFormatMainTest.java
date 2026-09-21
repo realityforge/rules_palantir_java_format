@@ -24,7 +24,7 @@ final class PalantirJavaFormatMainTest {
         final Path ignored = write(tempDir.resolve("other/Z.java"), "class Z{}\n");
         final Path text = write(tempDir.resolve("alpha/readme.txt"), "class Readme{}\n");
         final Path linkedTarget = write(tempDir.resolve("Linked.java"), "class Linked{}\n");
-        Files.createSymbolicLink(tempDir.resolve("alpha/Linked.java"), linkedTarget);
+        createSymbolicLinkIfSupported(tempDir.resolve("alpha/Linked.java"), linkedTarget);
 
         assertThat(WorkspaceRoots.discoverJavaSources(
                         WorkspaceRoots.resolve(tempDir, List.of("beta", "alpha", "alpha"))))
@@ -44,16 +44,18 @@ final class PalantirJavaFormatMainTest {
         final Path source = Files.createDirectories(tempDir.resolve("src"));
         final Path outside = Files.createDirectories(tempDir.resolveSibling(tempDir.getFileName() + "-outside"));
         final Path linked = tempDir.resolve("linked");
-        Files.createSymbolicLink(linked, source);
+        final boolean symlinkCreated = createSymbolicLinkIfSupported(linked, source);
 
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> WorkspaceRoots.resolve(tempDir, List.of(outside.toString())));
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> WorkspaceRoots.resolve(tempDir, List.of("../" + outside.getFileName())));
         assertThatIllegalArgumentException().isThrownBy(() -> WorkspaceRoots.resolve(tempDir, List.of("missing")));
-        assertThatIllegalArgumentException().isThrownBy(() -> WorkspaceRoots.resolve(tempDir, List.of("linked")));
+        if (symlinkCreated) {
+            assertThatIllegalArgumentException().isThrownBy(() -> WorkspaceRoots.resolve(tempDir, List.of("linked")));
+        }
 
-        Files.delete(linked);
+        Files.deleteIfExists(linked);
         Files.delete(outside);
     }
 
@@ -89,5 +91,14 @@ final class PalantirJavaFormatMainTest {
         Files.createDirectories(path.getParent());
         Files.writeString(path, content, StandardCharsets.UTF_8);
         return path;
+    }
+
+    private static boolean createSymbolicLinkIfSupported(final Path link, final Path target) {
+        try {
+            Files.createSymbolicLink(link, target);
+            return true;
+        } catch (IOException | UnsupportedOperationException | SecurityException ignored) {
+            return false;
+        }
     }
 }

@@ -28,6 +28,28 @@ java_binary(
     runtime_deps = [":javaformat"],
 )
 
+java_library(
+    name = "watcher",
+    srcs = [
+        "PalantirJavaFormatWatchMain.java",
+        "PalantirJavaFormatWatcher.java",
+    ],
+    visibility = ["//java_format/private/javatests/org/realityforge/rules/palantirjavaformat:__pkg__"],
+    deps = [
+        ":javaformat",
+        "@rules_palantir_java_format_maven//:com_palantir_javaformat_palantir_java_format_spi",
+        "@rules_palantir_java_format_maven//:org_jspecify_jspecify",
+    ],
+)
+
+java_binary(
+    name = "java_format_watch",
+    jvm_flags = PALANTIR_JVM_FLAGS,
+    main_class = "org.realityforge.rules.palantirjavaformat.PalantirJavaFormatWatchMain",
+    visibility = ["//:__pkg__"],
+    runtime_deps = [":watcher"],
+)
+
 java_proto_library(
     name = "worker_protocol_java",
     visibility = ["//java_format/private/javatests/org/realityforge/rules/palantirjavaformat:__pkg__"],

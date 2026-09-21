@@ -8,6 +8,7 @@ java_test(
     srcs = [
         "PalantirFormatterTest.java",
         "PalantirJavaFormatMainTest.java",
+        "PalantirJavaFormatWatcherTest.java",
         "PalantirJavaFormatWorkerMainTest.java",
         "package-info.java",
     ],
@@ -20,6 +21,7 @@ java_test(
     use_testrunner = False,
     deps = [
         "//java_format/private/java/org/realityforge/rules/palantirjavaformat:javaformat",
+        "//java_format/private/java/org/realityforge/rules/palantirjavaformat:watcher",
         "//java_format/private/java/org/realityforge/rules/palantirjavaformat:worker",
         "//java_format/private/java/org/realityforge/rules/palantirjavaformat:worker_protocol_java",
         "@rules_palantir_java_format_maven//:com_palantir_javaformat_palantir_java_format",

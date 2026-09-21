@@ -4,3 +4,8 @@ alias(
     name = "java_format",
     actual = "//java_format/private/java/org/realityforge/rules/palantirjavaformat:java_format",
 )
+
+alias(
+    name = "java_format_watch",
+    actual = "//java_format/private/java/org/realityforge/rules/palantirjavaformat:java_format_watch",
+)

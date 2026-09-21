@@ -15,15 +15,19 @@ final class WorkspaceRoots {
     private WorkspaceRoots() {}
 
     static List<String> parse(final String[] args) {
+        return parse(args, "java_format");
+    }
+
+    static List<String> parse(final String[] args, final String command) {
         final Set<String> roots = new LinkedHashSet<>();
         for (final String argument : args) {
             if (!argument.startsWith("--root=") || "--root=".equals(argument)) {
-                throw new IllegalArgumentException("usage: java_format --root=PATH [--root=PATH ...]");
+                throw new IllegalArgumentException("usage: " + command + " --root=PATH [--root=PATH ...]");
             }
             roots.add(argument.substring("--root=".length()));
         }
         if (roots.isEmpty()) {
-            throw new IllegalArgumentException("usage: java_format --root=PATH [--root=PATH ...]");
+            throw new IllegalArgumentException("usage: " + command + " --root=PATH [--root=PATH ...]");
         }
         return roots.stream().sorted().toList();
     }
