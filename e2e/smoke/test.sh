@@ -45,6 +45,11 @@ stop_watcher() {
 
 cleanup() {
   stop_watcher || true
+  if [[ -d "${SMOKE}" ]]; then
+    cd "${SMOKE}"
+    "${BAZEL[@]}" shutdown >/dev/null 2>&1 || true
+  fi
+  cd "${ROOT}"
   rm -rf "${TEMP_ROOT}"
 }
 trap cleanup EXIT
