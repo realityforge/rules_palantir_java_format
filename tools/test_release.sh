@@ -28,6 +28,7 @@ cleanup() {
 trap cleanup EXIT
 
 "${ROOT}/tools/release_archive.sh" v0.1.0 "${TEMP_ROOT}/first" "${TREEISH}" >/dev/null
+sleep 1
 "${ROOT}/tools/release_archive.sh" v0.1.0 "${TEMP_ROOT}/second" "${TREEISH}" >/dev/null
 FIRST="${TEMP_ROOT}/first/rules_palantir_java_format-v0.1.0.tar.gz"
 SECOND="${TEMP_ROOT}/second/rules_palantir_java_format-v0.1.0.tar.gz"

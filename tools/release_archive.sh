@@ -16,6 +16,7 @@ ARCHIVE="${OUTPUT_DIRECTORY}/rules_palantir_java_format-${TAG}.tar.gz"
 mkdir -p "${OUTPUT_DIRECTORY}"
 git -C "${ROOT}" archive \
   --format=tar \
+  --mtime='1970-01-01T00:00:00Z' \
   --prefix="rules_palantir_java_format-${VERSION}/" \
   "${TREEISH}" | gzip -n >"${ARCHIVE}"
 echo "${ARCHIVE}"
