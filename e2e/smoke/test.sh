@@ -20,12 +20,13 @@ stop_watcher() {
     case "$(uname -s)" in
       MINGW* | MSYS* | CYGWIN*)
         local windows_pid
-        if ! windows_pid="$(tr -d '[:space:]' 2>/dev/null <"/proc/${WATCH_PID}/winpid")"; then
-          echo "Unable to read native Windows watcher PID for ${WATCH_PID}" >&2
+        if ! windows_pid="$(jps -l | tr -d '\r' | awk \
+          '$2 == "org.realityforge.rules.palantirjavaformat.PalantirJavaFormatWatchMain" { print $1 }')"; then
+          echo "Unable to inspect Windows Java processes" >&2
           return 1
         fi
         if [[ ! "${windows_pid}" =~ ^[0-9]+$ ]]; then
-          echo "Unable to resolve native Windows watcher PID for ${WATCH_PID}" >&2
+          echo "Unable to resolve exactly one Windows watcher JVM PID" >&2
           return 1
         fi
         if ! taskkill.exe //PID "${windows_pid}" //T //F >/dev/null 2>&1; then
