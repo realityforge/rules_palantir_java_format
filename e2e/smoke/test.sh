@@ -102,6 +102,21 @@ grep -Fq 'class Smoke {' "${SOURCE}" || fail "writer did not format an included 
 grep -Fq 'class Excluded{}' excluded/Excluded.java || fail "writer formatted an excluded root"
 "${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:format_check
 
+printf 'package example; class Smoke{}\n' >"${SOURCE}"
+printf 'class Outside{}\n' >"${TEMP_ROOT}/Outside.java"
+if "${BAZEL[@]}" run "${BAZEL_COMMON[@]}" @rules_palantir_java_format//:java_format -- \
+  --root=src excluded/Excluded.java "${TEMP_ROOT}/Missing.java" >invalid-files.log 2>&1; then
+  fail "writer accepted a missing explicit file"
+fi
+grep -Fq 'Rejected Java format file:' invalid-files.log || fail "missing file error was unclear"
+grep -Fq 'class Smoke{}' "${SOURCE}" || fail "writer changed a file before validating the batch"
+grep -Fq 'class Excluded{}' excluded/Excluded.java || fail "writer changed an explicit file before validation"
+"${BAZEL[@]}" run "${BAZEL_COMMON[@]}" @rules_palantir_java_format//:java_format -- \
+  --root=src excluded/Excluded.java "${TEMP_ROOT}/Outside.java"
+grep -Fq 'class Smoke {' "${SOURCE}" || fail "mixed batch did not format a root file"
+grep -Fq 'class Excluded {' excluded/Excluded.java || fail "mixed batch did not format a relative file"
+grep -Fq 'class Outside {' "${TEMP_ROOT}/Outside.java" || fail "mixed batch did not format an outside file"
+
 mkdir watch
 printf 'class Existing{}\n' >watch/Existing.java
 "${BAZEL[@]}" build "${BAZEL_COMMON[@]}" @rules_palantir_java_format//:java_format_watch

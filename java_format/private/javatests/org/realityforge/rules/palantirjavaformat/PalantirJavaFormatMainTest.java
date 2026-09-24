@@ -30,13 +30,56 @@ final class PalantirJavaFormatMainTest {
                         WorkspaceRoots.resolve(tempDir, List.of("beta", "alpha", "alpha"))))
                 .containsExactly(first, second);
         assertThat(PalantirJavaFormatMain.formatWorkspace(
-                        tempDir, List.of("beta", "alpha", "alpha"), new PalantirFormatter()))
+                        tempDir, List.of("beta", "alpha", "alpha"), List.of(), new PalantirFormatter()))
                 .isEqualTo(2);
         assertThat(first).content(StandardCharsets.UTF_8).isEqualTo("class X {}\n");
         assertThat(second).content(StandardCharsets.UTF_8).isEqualTo("class Y {}\n");
         assertThat(ignored).content(StandardCharsets.UTF_8).isEqualTo("class Z{}\n");
         assertThat(text).content(StandardCharsets.UTF_8).isEqualTo("class Readme{}\n");
         assertThat(linkedTarget).content(StandardCharsets.UTF_8).isEqualTo("class Linked{}\n");
+    }
+
+    @Test
+    void formatsMixedRootsAndExplicitFilesIncludingOutsideWorkspace(@TempDir final Path tempDir)
+            throws IOException, FormatterException {
+        final Path workspace = Files.createDirectory(tempDir.resolve("workspace"));
+        final Path inRoot = write(workspace.resolve("src/InRoot.java"), "class InRoot{}\n");
+        final Path relative = write(workspace.resolve("other/Relative.java"), "class Relative{}\n");
+        final Path outside = write(tempDir.resolve("Outside.java"), "class Outside{}\n");
+        final Path linkedTarget = write(tempDir.resolve("LinkedTarget.java"), "class LinkedTarget{}\n");
+        final Path untouched = write(workspace.resolve("other/Untouched.java"), "class Untouched{}\n");
+        final Path link = workspace.resolve("other/Linked.java");
+        final boolean symlinkCreated = createSymbolicLinkIfSupported(link, linkedTarget);
+        final List<String> files = symlinkCreated
+                ? List.of("other/Relative.java", outside.toString(), "other/Linked.java", inRoot.toString())
+                : List.of("other/Relative.java", outside.toString(), inRoot.toString());
+
+        assertThat(PalantirJavaFormatMain.formatWorkspace(workspace, List.of("src"), files, new PalantirFormatter()))
+                .isEqualTo(symlinkCreated ? 4 : 3);
+        assertThat(inRoot).content(StandardCharsets.UTF_8).isEqualTo("class InRoot {}\n");
+        assertThat(relative).content(StandardCharsets.UTF_8).isEqualTo("class Relative {}\n");
+        assertThat(outside).content(StandardCharsets.UTF_8).isEqualTo("class Outside {}\n");
+        assertThat(linkedTarget)
+                .content(StandardCharsets.UTF_8)
+                .isEqualTo(symlinkCreated ? "class LinkedTarget {}\n" : "class LinkedTarget{}\n");
+        assertThat(untouched).content(StandardCharsets.UTF_8).isEqualTo("class Untouched{}\n");
+    }
+
+    @Test
+    void rejectsInvalidFilesBeforeWritingAnySource(@TempDir final Path tempDir) throws IOException {
+        final Path valid = write(tempDir.resolve("src/Valid.java"), "class Valid{}\n");
+        final Path text = write(tempDir.resolve("NotJava.txt"), "class NotJava{}\n");
+        for (final String invalid : List.of("Missing.java", text.toString(), "src")) {
+            assertThatIllegalArgumentException()
+                    .isThrownBy(() -> PalantirJavaFormatMain.formatWorkspace(
+                            tempDir, List.of("src"), List.of(valid.toString(), invalid), new PalantirFormatter()))
+                    .withMessageContaining("Rejected Java format file: " + invalid);
+            assertThat(valid).content(StandardCharsets.UTF_8).isEqualTo("class Valid{}\n");
+        }
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> PalantirJavaFormatMain.formatWorkspace(
+                        tempDir, List.of("missing"), List.of(valid.toString()), new PalantirFormatter()));
+        assertThat(valid).content(StandardCharsets.UTF_8).isEqualTo("class Valid{}\n");
     }
 
     @Test
@@ -85,6 +128,14 @@ final class PalantirJavaFormatMainTest {
         assertThat(PalantirJavaFormatMain.run(
                         new String[] {"--root=src"}, Map.of("BUILD_WORKSPACE_DIRECTORY", tempDir.toString()), error))
                 .isZero();
+
+        final Path source = write(tempDir.resolve("File.java"), "class File{}\n");
+        assertThat(PalantirJavaFormatMain.run(
+                        new String[] {source.toString()},
+                        Map.of("BUILD_WORKSPACE_DIRECTORY", tempDir.toString()),
+                        error))
+                .isZero();
+        assertThat(source).content(StandardCharsets.UTF_8).isEqualTo("class File {}\n");
     }
 
     private static Path write(final Path path, final String content) throws IOException {

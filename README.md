@@ -11,7 +11,7 @@ executables. The module is Bzlmod-only.
 After publication to the Bazel Central Registry, add:
 
 ```starlark
-bazel_dep(name = "rules_palantir_java_format", version = "0.1.0")
+bazel_dep(name = "rules_palantir_java_format", version = "0.1.1")
 ```
 
 Before the initial BCR entry exists, use the immutable GitHub release:
@@ -22,9 +22,9 @@ bazel_dep(name = "rules_palantir_java_format")
 archive_override(
     module_name = "rules_palantir_java_format",
     integrity = "sha256-REPLACE_WITH_RELEASE_INTEGRITY",
-    strip_prefix = "rules_palantir_java_format-0.1.0",
+    strip_prefix = "rules_palantir_java_format-0.1.1",
     urls = [
-        "https://github.com/realityforge/rules_palantir_java_format/releases/download/v0.1.0/rules_palantir_java_format-v0.1.0.tar.gz",
+        "https://github.com/realityforge/rules_palantir_java_format/releases/download/v0.1.1/rules_palantir_java_format-v0.1.1.tar.gz",
     ],
 )
 ```
@@ -60,24 +60,29 @@ Without these settings, the same check runs correctly as an ordinary local actio
 
 ## Write and watch
 
-Both mutation commands require one or more explicit workspace-relative roots:
+The one-shot command accepts workspace-relative roots, explicit Java files, or both:
 
 ```console
 bazel run @rules_palantir_java_format//:java_format -- --root=src --root=tools
+bazel run @rules_palantir_java_format//:java_format -- /absolute/path/to/Changed.java src/Other.java
+bazel run @rules_palantir_java_format//:java_format -- --root=src /absolute/path/to/Changed.java
 bazel run @rules_palantir_java_format//:java_format_watch -- --root=src --root=tools
 ```
 
 Roots are normalized, sorted, and deduplicated. Each root must already exist, be a directory inside the workspace, and
 contain no symbolic-link component. Only regular `.java` files beneath admitted roots are formatted; symbolic links
-are never followed. Repeating a root is safe.
+are never followed. Repeating a root is safe. The watcher still requires roots.
 
-The one-shot command walks all admitted roots deterministically and writes only files whose formatted content differs.
+Explicit files may be absolute or relative to the caller's workspace, including paths outside that workspace. They must
+already exist, be regular `.java` files, and may be symbolic links. All explicit files and roots are validated before
+anything is written. The one-shot command sorts and deduplicates the combined file set and writes only files whose
+formatted content differs. A formatter error stops the command; earlier files in the batch may already have changed.
 The watcher does not format at startup. It formats eligible create and modify events, registers new directories,
 continues after invalid Java input, and performs a bounded admitted-root rescan after an event overflow.
 
 ## Compatibility
 
-The `0.1.0` support matrix is intentionally bounded:
+The `0.1.1` support matrix is intentionally bounded:
 
 | Java | Bazel | Linux x86_64 | macOS x86_64 | macOS arm64 | Windows x86_64 |
 | --- | --- | --- | --- | --- | --- |
@@ -93,9 +98,10 @@ documented API. Private labels and Java classes may change in any release and mu
 
 ## Troubleshooting
 
-- `usage: java_format ... --root=PATH` means no explicit root was provided.
+- `usage: java_format [--root=PATH ...] [FILE ...]` means no valid root or file argument was provided.
 - `Rejected Java format root` means the path is missing, absolute, outside the workspace, not a directory, or contains
   a symbolic-link component.
+- `Rejected Java format file` means an explicit file is missing, is not a regular file, or does not end in `.java`.
 - If checks start a JVM per action, add the two worker settings shown above and confirm no broader strategy flag
   overrides the `PalantirJavaFormat` mnemonic.
 - If a dirty check names a file but the write command does not repair it, make sure the remediation includes a root
@@ -120,4 +126,4 @@ archive and GitHub provenance attestations.
 
 The Publish-to-BCR workflow is deliberately manual. It requires a `realityforge/bazel-central-registry` fork and a
 classic PAT stored as `BCR_PUBLISH_TOKEN`; running it will propose the selected released tag to BCR. No BCR pull
-request is part of the `0.1.0` delivery.
+request is part of the `0.1.1` delivery.
