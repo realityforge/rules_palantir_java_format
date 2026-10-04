@@ -6,5 +6,3 @@ common --tool_java_runtime_version=remotejdk_17
 build --nojava_header_compilation
 build --strategy=PalantirJavaFormat=worker,local
 build --worker_max_instances=PalantirJavaFormat=1
-
-common --symlink_prefix=/

@@ -68,6 +68,5 @@ jobs:
       - uses: bazel-contrib/setup-bazel@8cb04a772ab4c1eb984e9c1b493a182e96c5e425
         with:
           disk-cache: true
-          repository-cache: true
       - shell: bash
         run: tools/check.sh
