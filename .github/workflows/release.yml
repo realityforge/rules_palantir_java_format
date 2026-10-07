@@ -70,15 +70,15 @@ jobs:
             -f per_page=100)"
           required_jobs=(
             "Java 17 / Bazel 8.4.2 / Ubuntu x86_64"
-            "Java 17 / Bazel 9.2.0 / Ubuntu x86_64"
+            "Java 17 / Bazel 9.3.0 / Ubuntu x86_64"
             "Java 17 / Bazel 8.4.2 / macOS x86_64"
-            "Java 17 / Bazel 9.2.0 / macOS x86_64"
+            "Java 17 / Bazel 9.3.0 / macOS x86_64"
             "Java 17 / Bazel 8.4.2 / macOS arm64"
-            "Java 17 / Bazel 9.2.0 / macOS arm64"
+            "Java 17 / Bazel 9.3.0 / macOS arm64"
             "Java 17 / Bazel 8.4.2 / Windows x86_64"
-            "Java 17 / Bazel 9.2.0 / Windows x86_64"
-            "Java 21 / Bazel 9.2.0 / Ubuntu x86_64"
-            "Java 25 / Bazel 9.2.0 / Ubuntu x86_64"
+            "Java 17 / Bazel 9.3.0 / Windows x86_64"
+            "Java 21 / Bazel 9.3.0 / Ubuntu x86_64"
+            "Java 25 / Bazel 9.3.0 / Ubuntu x86_64"
           )
           for job in "${required_jobs[@]}"; do
             if ! jq -e --arg job "${job}" \

@@ -20,41 +20,41 @@ jobs:
             os: ubuntu-latest
             bazel: 8.4.2
             java: 17
-          - name: Java 17 / Bazel 9.2.0 / Ubuntu x86_64
+          - name: Java 17 / Bazel 9.3.0 / Ubuntu x86_64
             os: ubuntu-latest
-            bazel: 9.2.0
+            bazel: 9.3.0
             java: 17
           - name: Java 17 / Bazel 8.4.2 / macOS x86_64
             os: macos-15-intel
             bazel: 8.4.2
             java: 17
-          - name: Java 17 / Bazel 9.2.0 / macOS x86_64
+          - name: Java 17 / Bazel 9.3.0 / macOS x86_64
             os: macos-15-intel
-            bazel: 9.2.0
+            bazel: 9.3.0
             java: 17
           - name: Java 17 / Bazel 8.4.2 / macOS arm64
             os: macos-15
             bazel: 8.4.2
             java: 17
-          - name: Java 17 / Bazel 9.2.0 / macOS arm64
+          - name: Java 17 / Bazel 9.3.0 / macOS arm64
             os: macos-15
-            bazel: 9.2.0
+            bazel: 9.3.0
             java: 17
           - name: Java 17 / Bazel 8.4.2 / Windows x86_64
             os: windows-latest
             bazel: 8.4.2
             java: 17
-          - name: Java 17 / Bazel 9.2.0 / Windows x86_64
+          - name: Java 17 / Bazel 9.3.0 / Windows x86_64
             os: windows-latest
-            bazel: 9.2.0
+            bazel: 9.3.0
             java: 17
-          - name: Java 21 / Bazel 9.2.0 / Ubuntu x86_64
+          - name: Java 21 / Bazel 9.3.0 / Ubuntu x86_64
             os: ubuntu-latest
-            bazel: 9.2.0
+            bazel: 9.3.0
             java: 21
-          - name: Java 25 / Bazel 9.2.0 / Ubuntu x86_64
+          - name: Java 25 / Bazel 9.3.0 / Ubuntu x86_64
             os: ubuntu-latest
-            bazel: 9.2.0
+            bazel: 9.3.0
             java: 25
     env:
       RULES_PJF_USE_LOCAL_JDK: "1"
