@@ -76,13 +76,26 @@ wait_for_content() {
 }
 
 cd "${FIXTURE}"
-"${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:format_check \
+"${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:format_check //:fixture_format_check \
   @rules_palantir_java_format//:java_format \
   @rules_palantir_java_format//:java_format_watch
 
 mkdir "${SMOKE}"
 cp -R "${FIXTURE}/." "${SMOKE}/"
 cd "${SMOKE}"
+
+FIXTURE_SOURCE="fixtures/example/Fixture.java"
+printf 'package example; class Fixture{MissingType value;}\n' >"${FIXTURE_SOURCE}"
+BEFORE="$(cksum "${FIXTURE_SOURCE}")"
+if "${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:fixture_format_check >fixture-check.log 2>&1; then
+  fail "dirty filegroup format check unexpectedly passed"
+fi
+grep -Fq "${FIXTURE_SOURCE}" fixture-check.log || fail "filegroup check omitted the source path"
+grep -Fq "bazel run @rules_palantir_java_format//:java_format -- --root=fixtures" fixture-check.log \
+  || fail "filegroup check omitted remediation"
+[[ "${BEFORE}" == "$(cksum "${FIXTURE_SOURCE}")" ]] || fail "filegroup check mutated its input"
+"${BAZEL[@]}" run "${BAZEL_COMMON[@]}" @rules_palantir_java_format//:java_format -- --root=fixtures
+"${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:fixture_format_check
 
 SOURCE="src/example/Smoke.java"
 printf 'package example; class Smoke{}\n' >"${SOURCE}"

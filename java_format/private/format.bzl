@@ -32,7 +32,7 @@ def _format_aspect_impl(target, ctx):
     transitive_outputs = _dependency_outputs(ctx)
     direct_outputs = []
     direct_sources = []
-    if JavaInfo in target and ctx.label.repo_name == "" and hasattr(ctx.rule.files, "srcs"):
+    if (JavaInfo in target or ctx.rule.kind == "filegroup") and ctx.label.repo_name == "" and hasattr(ctx.rule.files, "srcs"):
         direct_sources = [
             source
             for source in ctx.rule.files.srcs
