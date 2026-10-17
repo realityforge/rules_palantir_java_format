@@ -12,3 +12,14 @@ java_format_check(
     remediation = "bazel run @rules_palantir_java_format//:java_format -- --root=src",
     targets = [":smoke"],
 )
+
+filegroup(
+    name = "fixtures",
+    srcs = ["fixtures/example/Fixture.java"],
+)
+
+java_format_check(
+    name = "fixture_format_check",
+    remediation = "bazel run @rules_palantir_java_format//:java_format -- --root=fixtures",
+    targets = [":fixtures"],
+)

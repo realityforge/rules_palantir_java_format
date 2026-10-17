@@ -33,7 +33,7 @@ Replace the placeholder with the SRI value published with the release. Do not pi
 
 ## Check targets
 
-Load the rule from the root API and point it at Java targets:
+Load the rule from the root API and point it at Java targets or source filegroups:
 
 ```starlark
 load("@rules_palantir_java_format//:defs.bzl", "java_format_check")
@@ -46,6 +46,7 @@ java_format_check(
 ```
 
 The rule checks direct workspace-owned Java sources and follows `deps`, `runtime_deps`, `exports`, and `tests`.
+A source filegroup can check Java fixtures that are intentionally unsuitable for compilation.
 Generated and external sources are excluded. A failure lists workspace-relative files and the exact remediation supplied
 by the consumer. Check actions never modify source files.
 
