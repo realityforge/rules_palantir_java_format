@@ -1,11 +1,9 @@
 """Private aspect and aggregation rule for Java format checks."""
 
-load("@rules_java//java:defs.bzl", "JavaInfo")
-
 visibility("//")
 
 _PalantirJavaFormatInfo = provider(
-    "Formatting marker outputs owned by a Java target and its dependencies.",
+    "Formatting marker outputs for owned Java sources and traversed dependencies.",
     fields = {
         "check_outputs": "Formatting marker outputs for this target and traversed dependencies.",
     },
@@ -28,15 +26,15 @@ def _dependency_outputs(ctx):
                 check_outputs.append(dependency[_PalantirJavaFormatInfo].check_outputs)
     return check_outputs
 
-def _format_aspect_impl(target, ctx):
+def _format_aspect_impl(_target, ctx):
     transitive_outputs = _dependency_outputs(ctx)
     direct_outputs = []
     direct_sources = []
-    if (JavaInfo in target or ctx.rule.kind == "filegroup") and ctx.label.repo_name == "" and hasattr(ctx.rule.files, "srcs"):
+    if ctx.label.repo_name == "" and hasattr(ctx.rule.files, "srcs"):
         direct_sources = [
             source
             for source in ctx.rule.files.srcs
-            if source.is_source and source.basename.endswith(".java")
+            if source.is_source and source.owner.repo_name == "" and source.basename.endswith(".java")
         ]
     if direct_sources:
         marker = ctx.actions.declare_file(ctx.label.name + ".palantir-java-format")

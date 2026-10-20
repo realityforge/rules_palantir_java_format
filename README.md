@@ -45,8 +45,9 @@ java_format_check(
 )
 ```
 
-The rule checks direct workspace-owned Java sources and follows `deps`, `runtime_deps`, `exports`, and `tests`.
-A source filegroup can check Java fixtures that are intentionally unsuitable for compilation.
+The rule checks workspace-owned Java files in each target's `srcs`, including native J2CL libraries and source
+filegroups. It follows `deps`, `runtime_deps`, `exports`, and `tests`. A source filegroup can check Java fixtures
+that are intentionally unsuitable for compilation.
 Generated and external sources are excluded. A failure lists workspace-relative files and the exact remediation supplied
 by the consumer. Check actions never modify source files.
 
