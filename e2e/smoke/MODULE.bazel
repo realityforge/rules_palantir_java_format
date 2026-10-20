@@ -20,3 +20,10 @@ maven.install(
     strict_visibility = True,
 )
 use_repo(maven, "rules_palantir_java_format_smoke_maven")
+
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
+local_repository(
+    name = "external_sources",
+    path = "external_sources",
+)

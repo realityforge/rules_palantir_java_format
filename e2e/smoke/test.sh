@@ -76,13 +76,28 @@ wait_for_content() {
 }
 
 cd "${FIXTURE}"
-"${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:format_check //:fixture_format_check \
+"${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:format_check //:fixture_format_check //:source_format_check \
   @rules_palantir_java_format//:java_format \
   @rules_palantir_java_format//:java_format_watch
 
 mkdir "${SMOKE}"
 cp -R "${FIXTURE}/." "${SMOKE}/"
 cd "${SMOKE}"
+
+RESOURCE_SOURCE="resources/example/Resource.java"
+printf 'package example; class Resource{}\n' >"${RESOURCE_SOURCE}"
+printf 'class External{}\n' >external_sources/External.java
+BEFORE="$(cksum "${RESOURCE_SOURCE}")"
+if "${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:source_format_check >source-check.log 2>&1; then
+  fail "dirty source-only target format check unexpectedly passed"
+fi
+grep -Fq "${RESOURCE_SOURCE}" source-check.log || fail "source-only check omitted the source path"
+grep -Fq 'bazel run @rules_palantir_java_format//:java_format -- --root=resources' source-check.log \
+  || fail "source-only check omitted remediation"
+[[ "${BEFORE}" == "$(cksum "${RESOURCE_SOURCE}")" ]] || fail "source-only check mutated its input"
+"${BAZEL[@]}" run "${BAZEL_COMMON[@]}" @rules_palantir_java_format//:java_format -- --root=resources
+"${BAZEL[@]}" build "${BAZEL_COMMON[@]}" //:source_format_check
+grep -Fq 'class External{}' external_sources/External.java || fail "source check changed an external source"
 
 FIXTURE_SOURCE="fixtures/example/Fixture.java"
 printf 'package example; class Fixture{MissingType value;}\n' >"${FIXTURE_SOURCE}"

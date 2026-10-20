@@ -9,7 +9,7 @@ def java_format_check(name, targets, remediation, **kwargs):
 
     Args:
       name: The target name.
-      targets: Java targets or source filegroups whose supported dependency edges should be checked.
+      targets: Targets whose Java srcs and supported dependency edges should be checked.
       remediation: The command users should run when unformatted sources are found.
       **kwargs: Common rule attributes such as visibility and tags.
     """

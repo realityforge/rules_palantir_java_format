@@ -23,3 +23,30 @@ java_format_check(
     remediation = "bazel run @rules_palantir_java_format//:java_format -- --root=fixtures",
     targets = [":fixtures"],
 )
+
+genrule(
+    name = "generated_source",
+    outs = ["Generated.java"],
+    cmd = "printf 'class Generated{}' > $@",
+)
+
+genrule(
+    name = "source_bundle",
+    srcs = [
+        "resources/example/Resource.java",
+        "resources/not-java.txt",
+        ":generated_source",
+        "@external_sources//:External.java",
+    ],
+    outs = ["sources.txt"],
+    cmd = "cat $(SRCS) > $@",
+)
+
+java_format_check(
+    name = "source_format_check",
+    remediation = "bazel run @rules_palantir_java_format//:java_format -- --root=resources",
+    targets = [
+        ":source_bundle",
+        "@external_sources//:sources",
+    ],
+)

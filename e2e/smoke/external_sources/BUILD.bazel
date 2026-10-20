@@ -1,0 +1,9 @@
+exports_files(["External.java"])
+
+genrule(
+    name = "sources",
+    srcs = ["External.java"],
+    outs = ["external.txt"],
+    cmd = "cat $(SRCS) > $@",
+    visibility = ["//visibility:public"],
+)
